@@ -28,16 +28,11 @@ public class TodoListController {
 		super();
 		this.todoItemRepository = todoItemRepository;
 	}
-	
-	public TodoListController() {
-		super();		
-	}
 
 	@PostMapping("/todos")
 	@ResponseStatus(code = HttpStatus.CREATED)
 	public void createTodoItem(@RequestBody TodoItem todoItem) {
-		// Code à compléter
-		// ...
+		this.todoItemRepository.save(todoItem);
 	}
 
 	@GetMapping("/todos")

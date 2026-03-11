@@ -75,9 +75,57 @@ docker run: C’est la commande de base pour créer et lancer un conteneur Docke
 
 *Pourquoi `todoItemRepository` est-il `null` ? Quelle est la meilleure façon de l'injecter ?*
 
+Le `todoItemRepository` est nul car il n'a pas été correctement injecté dans `TodoListController` via l'injection de dépendances de Spring. Dans le code actuel, bien que `TodoListController` dispose d'un constructeur permettant d'injecter `TodoItemRepository`, nous avons également un constructeur par défaut vide qui ne fait aucune injection. En conséquence, Spring instancie `TodoListController` sans fournir `TodoItemRepository`, ce qui entraîne une valeur null.
+
+Pour garantir une injection correcte, il est recommandé d'utiliser l'injection de dépendances par le constructeur. Cela implique de supprimer le constructeur vide afin d'imposer l'utilisation du constructeur prenant `TodoItemRepository` en paramètre. Spring pourra alors automatiquement injecter la dépendance requise, assurant ainsi un bon fonctionnement du contrôleur.
+
 * Modifier le code en conséquence.
 
+**Modifications effectuées :**
+
+1. **Suppression du constructeur par défaut vide** - Cela force Spring à utiliser le seul constructeur disponible avec injection de dépendance.
+
+2. **Conservation du constructeur avec injection** :
+```java
+public TodoListController(TodoItemRepository todoItemRepository) {
+    super();
+    this.todoItemRepository = todoItemRepository;
+}
+```
+
+3. **Implémentation de la méthode `createTodoItem()`** pour persister l'item en base de données :
+```java
+@PostMapping("/todos")
+@ResponseStatus(code = HttpStatus.CREATED)
+public void createTodoItem(@RequestBody TodoItem todoItem) {
+    this.todoItemRepository.save(todoItem);
+}
+```
+
 * Tester vos endpoints avec un client REST.
+
+**Instructions de test :**
+
+1. Lancer l'application Spring : clic droit sur `TodolistApplication.java` → 'Run as' → 'Java Application'
+
+2. **Test 1 - Créer un TodoItem (POST)** :
+   - URL : `POST http://localhost:8080/todos`
+   - Content-Type : `application/json`
+   - Body :
+```json
+{
+    "id": "0f8-06eb17ba8d34",
+    "time": "2020-02-27T10:31:43Z",
+    "content": "Faire les courses"
+}
+```
+   - Résultat attendu : Code HTTP `201 Created`
+
+3. **Test 2 - Récupérer tous les TodoItems (GET)** :
+   - URL : `GET http://localhost:8080/todos`
+   - Résultat attendu : Liste JSON des items persistés
+
+4. **Vérification en base de données** : Utiliser DBeaver pour se connecter à PostgreSQL et vérifier que les données sont bien enregistrées dans la table `todo_item`.
 
 
 [NOTE]
