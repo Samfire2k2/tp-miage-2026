@@ -1,40 +1,46 @@
-package com.acme.todolist.adapters.rest_api;
+package com.acme.todolist.adapters.persistence;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
-import com.acme.todolist.application.port.in.AddTodoItem;
-import com.acme.todolist.application.port.in.GetTodoItems;
+import com.acme.todolist.application.port.out.LoadTodoItem;
+import com.acme.todolist.application.port.out.UpdateTodoItem;
 import com.acme.todolist.domain.TodoItem;
 
-@RestController
-public class TodoListController {
-    
-    private GetTodoItems getTodoItemsQuery;
-    private AddTodoItem addTodoItemCommand;
-    
+/**
+ * Adaptateur de persistance pour les TodoItems
+ * Implémente les ports de sortie UpdateTodoItem et LoadTodoItem
+ *
+ * @author bflorat
+ */
+@Component
+public class TodoItemPersistenceAdapter implements UpdateTodoItem, LoadTodoItem {
+
+    private TodoItemRepository todoItemRepository;
+    private TodoItemMapper todoItemMapper;
+
     @Inject
-    public TodoListController(GetTodoItems getTodoItemsQuery, AddTodoItem addTodoItemCommand) {
-        this.getTodoItemsQuery = getTodoItemsQuery;
-        this.addTodoItemCommand = addTodoItemCommand;
+    public TodoItemPersistenceAdapter(TodoItemRepository todoItemRepository, TodoItemMapper todoItemMapper) {
+        this.todoItemRepository = todoItemRepository;
+        this.todoItemMapper = todoItemMapper;
     }
-    
-    @GetMapping("/todos")
-    public List<TodoItem> getAllTodoItems() {
-        return this.getTodoItemsQuery.getAllTodoItems();
+
+    @Override
+    public void storeNewTodoItem(TodoItem item) {
+        TodoItemJpaEntity jpaEntity = todoItemMapper.mapToTodoItemJpaEntity(item);
+        todoItemRepository.save(jpaEntity);
     }
-    
-    @PostMapping("/todos")
-    @ResponseStatus(code = HttpStatus.CREATED)
-    public void ajouterItem(@RequestBody TodoItem item) {
-        this.addTodoItemCommand.addTodoItem(item);
+
+    @Override
+    public List<TodoItem> loadAllTodoItems() {
+        return todoItemRepository.findAll().stream()
+                .map(todoItemMapper::mapToTodoItem)
+                .collect(Collectors.toList());
     }
 }
+
+

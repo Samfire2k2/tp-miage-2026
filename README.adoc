@@ -190,12 +190,127 @@ Source : http://leanpub.com/get-your-hands-dirty-on-clean-architecture[Tom Hombe
 
 *Rappeler en quelques lignes les grands principes de l'architecture hexagonale.*
 
+L'architecture hexagonale est un modèle de conception logicielle qui vise à créer une séparation claire entre la logique métier d'une application et les interfaces par lesquelles cette application interagit avec des systèmes externes, tels que des bases de données, des services web ou l'interface utilisateur. Voici ses principaux principes :
+
+**1. Centralité de la logique métier :** Au cœur de l'architecture se trouve la logique métier, souvent représentée par des entités et des cas d'utilisation. Ces éléments ne dépendent d'aucun cadre extérieur ou technologie spécifique.
+
+**2. Ports :** Les ports sont des interfaces qui définissent les points d'interaction nécessaires entre la logique métier et les agents externes. Il y a généralement des ports d'entrée pour les commandes entrantes (comme les requêtes HTTP) et des ports de sortie pour les interactions sortantes (comme la persistance des données).
+
+**3. Adaptateurs :** Les adaptateurs sont des implémentations concrètes des ports qui adaptent la communication entre la logique métier et les agents externes.
+Par exemple, un adaptateur web peut convertir des requêtes HTTP en appels de méthode sur les ports d'entrée, tandis qu'un adaptateur de persistance peut implémenter la logique nécessaire pour enregistrer des entités dans une base de données.
+
+**4. Séparation des préoccupations :** L'architecture hexagonale cherche à séparer les préoccupations en isolant la logique métier des détails techniques de l'infrastructure.
+
+Cette approche offre une grande flexibilité : il est possible de remplacer un adaptateur sans modifier la logique métier, facilitant ainsi les tests et l'évolution du système.
+
 Compléter ce code avec une fonctionnalité de création de `TodoItem`  persisté en base et appelé depuis un endpoint REST `POST /todos` qui :
 
 * prend un `TodoItem` au format JSON dans le body (voir exemple de contenu plus haut);
-* renvoie un code `201` en cas de succès. 
+* renvoie un code `201` en cas de succès.
 
 La fonctionnalité à implémenter est contractualisée par le port d'entrée `AddTodoItem`.
+
+**Implémentation effectuée :**
+
+1. **TodoListController** (Adaptateur REST) :
+```java
+@RestController
+public class TodoListController {
+    private GetTodoItems getTodoItemsQuery;
+    private AddTodoItem addTodoItemCommand;
+
+    @Inject
+    public TodoListController(GetTodoItems getTodoItemsQuery, AddTodoItem addTodoItemCommand) {
+        this.getTodoItemsQuery = getTodoItemsQuery;
+        this.addTodoItemCommand = addTodoItemCommand;
+    }
+
+    @PostMapping("/todos")
+    @ResponseStatus(code = HttpStatus.CREATED)
+    public void ajouterItem(@RequestBody TodoItem item) {
+        this.addTodoItemCommand.addTodoItem(item);
+    }
+
+    @GetMapping("/todos")
+    public List<TodoItem> getAllTodoItems() {
+        return this.getTodoItemsQuery.getAllTodoItems();
+    }
+}
+```
+
+2. **AddTodoItemService** (Service applicatif) :
+```java
+@Component
+public class AddTodoItemService implements AddTodoItem {
+    private UpdateTodoItem updateTodoItem;
+
+    @Inject
+    public AddTodoItemService(UpdateTodoItem updateTodoItem) {
+        this.updateTodoItem = updateTodoItem;
+    }
+
+    @Override
+    public void addTodoItem(TodoItem item) {
+        this.updateTodoItem.storeNewTodoItem(item);
+    }
+}
+```
+
+3. **TodoItemPersistenceAdapter** (Adaptateur de persistance) :
+```java
+@Component
+public class TodoItemPersistenceAdapter implements UpdateTodoItem, LoadTodoItem {
+    private TodoItemRepository todoItemRepository;
+    private TodoItemMapper todoItemMapper;
+
+    @Inject
+    public TodoItemPersistenceAdapter(TodoItemRepository todoItemRepository, TodoItemMapper todoItemMapper) {
+        this.todoItemRepository = todoItemRepository;
+        this.todoItemMapper = todoItemMapper;
+    }
+
+    @Override
+    public void storeNewTodoItem(TodoItem item) {
+        TodoItemJpaEntity jpaEntity = todoItemMapper.mapToTodoItemJpaEntity(item);
+        todoItemRepository.save(jpaEntity);
+    }
+
+    @Override
+    public List<TodoItem> loadAllTodoItems() {
+        return todoItemRepository.findAll().stream()
+                .map(todoItemMapper::mapToTodoItem)
+                .collect(Collectors.toList());
+    }
+}
+```
+
+**Flux d'exécution :**
+```
+Client HTTP (POST /todos)
+    ↓
+TodoListController.ajouterItem()
+    ↓ (port d'entrée)
+AddTodoItem.addTodoItem()
+    ↓ (interface)
+AddTodoItemService.addTodoItem()
+    ↓ (port de sortie)
+UpdateTodoItem.storeNewTodoItem()
+    ↓ (interface)
+TodoItemPersistenceAdapter.storeNewTodoItem()
+    ↓ (adaptateur)
+TodoItemRepository.save()
+    ↓
+PostgreSQL (persistance)
+    ↓
+HTTP 201 Created
+```
+
+**Avantages de cette architecture :**
+- ✅ Isolement du domaine métier des détails techniques
+- ✅ Meilleure testabilité (chaque couche testée indépendamment)
+- ✅ Réutilisabilité (les ports peuvent être utilisés par plusieurs adaptateurs)
+- ✅ Maintenabilité (responsabilités clairement séparées)
+- ✅ Flexibilité (remplacement facile d'un adaptateur)
 
 ### Exercice 3 - Ecriture de tests
 _Temps estimé : 20 mins_
