@@ -53,7 +53,7 @@ Oui, le code est structuré en couches : TodolistApplication.java est le point d
 *Où se trouve le code métier (voir la règle de gestion RG 1) ?*
 Le code métier concernant la règle de gestion RG 1 se trouve dans la méthode finalContent() de la classe TodoListController. Cette règle ajoute le préfixe [LATE!] au contenu d'un TodoItem si l'item a plus de 24 heures. Idéalement, cette règle devrait être encapsulée dans l'entité métier TodoItem elle-même ou dans une classe service dédiée, et non dans le contrôleur, ce qui constitue une violation du principe de séparation des responsabilités.
 *Cette règle est-elle facilement testable par un test unitaire ?*
-La règle de gestion RG 1 est théoriquement testable unitairement, mais sa testabilité est compromise par sa dépendance à Instant.now(), qui renvoie l'instant present. Cette dépendance rend les tests instables et imprédictibles car le résultat varie selon le moment d'exécution. Pour améliorer la testabilité, la meilleure pratique serait d'injecter une abstraction de temps (java.time.Clock) plutôt que d'utiliser directement Instant.now(), permettant ainsi de contrôler le temps dans les tests. De plus, comme la logique réside actuellement dans le contrôleur, tester cette règle demande de mocker une requête HTTP complète avec le contexte Spring, ce qui complexifie les tests unitaires.
+La règle de gestion RG 1 est théoriquement testable unitairement mais sa testabilité est compromise par sa dépendance à Instant.now(), qui renvoie l'instant present. Cette dépendance rend les tests instables et imprédictibles car le résultat varie selon le moment d'exécution. Pour améliorer la testabilité, la meilleure pratique serait d'injecter une abstraction de temps (java.time.Clock) plutôt que d'utiliser directement Instant.now(), permettant ainsi de contrôler le temps dans les tests. De plus, comme la logique réside actuellement dans le contrôleur, tester cette règle demande de mocker une requête HTTP complète avec le contexte Spring, ce qui complexifie les tests unitaires.
 
 * Lancer une base PostgreSQL en Docker dans un terminal (on lance ici la base en mode interactif pour visualiser son activité. Pour la lancer en tâche de fond, remplacer les options `it` par `d` comme 'daemon'):
 ```bash
@@ -153,21 +153,6 @@ public void createTodoItem(@RequestBody TodoItem todoItem) {
 
 5. **Vérification en base de données** : Utiliser DBeaver pour se connecter à PostgreSQL et vérifier que les données sont bien enregistrées dans la table `todo_item`.
 
-**Résumé des tests effectués :**
-
-**POST /todos** - Création d'un TodoItem
-- Code HTTP attendu : `201 Created`
-- Les données sont persistées en base de données PostgreSQL
-
-**GET /todos** - Récupération de tous les TodoItems
-- Code HTTP attendu : `200 OK`
-- La réponse contient une liste JSON avec tous les items persistés
-- La règle de gestion RG1 est appliquée : `[LATE!]` est préfixé aux items datés de plus de 24h
-
-**Injection de dépendance**
-- Le `TodoItemRepository` est correctement injecté via le constructeur
-- Pas de `NullPointerException` lors de l'appel aux endpoints
-
 NOTE: Pour lancer l'application Spring, sélectionner la classe `Application` et faire bouton droit -> 'Run as' -> 'Java Application'.
 
 * Quand le nouveau endpoint fonctionne, commiter, faire un push vers Github.
@@ -192,16 +177,15 @@ Source : http://leanpub.com/get-your-hands-dirty-on-clean-architecture[Tom Hombe
 
 L'architecture hexagonale est un modèle de conception logicielle qui vise à créer une séparation claire entre la logique métier d'une application et les interfaces par lesquelles cette application interagit avec des systèmes externes, tels que des bases de données, des services web ou l'interface utilisateur. Voici ses principaux principes :
 
-**1. Centralité de la logique métier :** Au cœur de l'architecture se trouve la logique métier, souvent représentée par des entités et des cas d'utilisation. Ces éléments ne dépendent d'aucun cadre extérieur ou technologie spécifique.
+Au cœur de l'architecture se trouve la logique métier, souvent représentée par des entités et des cas d'utilisation. Ces éléments ne dépendent d'aucun cadre extérieur ou technologie spécifique.
 
-**2. Ports :** Les ports sont des interfaces qui définissent les points d'interaction nécessaires entre la logique métier et les agents externes. Il y a généralement des ports d'entrée pour les commandes entrantes (comme les requêtes HTTP) et des ports de sortie pour les interactions sortantes (comme la persistance des données).
+Les ports sont des interfaces qui définissent les points d'interaction nécessaires entre la logique métier et les agents externes. Il y a généralement des ports d'entrée pour les commandes entrantes (comme les requêtes HTTP) et des ports de sortie pour les interactions sortantes (comme la persistance des données).
 
-**3. Adaptateurs :** Les adaptateurs sont des implémentations concrètes des ports qui adaptent la communication entre la logique métier et les agents externes.
+Les adaptateurs sont des implémentations concrètes des ports qui adaptent la communication entre la logique métier et les agents externes.
 Par exemple, un adaptateur web peut convertir des requêtes HTTP en appels de méthode sur les ports d'entrée, tandis qu'un adaptateur de persistance peut implémenter la logique nécessaire pour enregistrer des entités dans une base de données.
 
-**4. Séparation des préoccupations :** L'architecture hexagonale cherche à séparer les préoccupations en isolant la logique métier des détails techniques de l'infrastructure.
+L'architecture hexagonale cherche à séparer les préoccupations en isolant la logique métier des détails techniques de l'infrastructure.
 
-Cette approche offre une grande flexibilité : il est possible de remplacer un adaptateur sans modifier la logique métier, facilitant ainsi les tests et l'évolution du système.
 
 Compléter ce code avec une fonctionnalité de création de `TodoItem`  persisté en base et appelé depuis un endpoint REST `POST /todos` qui :
 
