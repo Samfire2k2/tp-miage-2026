@@ -104,9 +104,23 @@ public void createTodoItem(@RequestBody TodoItem todoItem) {
 
 * Tester vos endpoints avec un client REST.
 
+[NOTE]
+====
+* Les URL des endpoints sont renseignées dans le contrôleur via les annotations `@...Mapping`
+* Exemple de body JSON :
+
+```json
+{
+    "id": "0f8-06eb17ba8d34",
+    "time": "2020-02-27T10:31:43Z",
+    "content": "Faire les courses"
+}
+```
+====
+
 **Instructions de test :**
 
-1. Lancer l'application Spring : clic droit sur `TodolistApplication.java` → 'Run as' → 'Java Application'
+1. Lancer l'application Spring : clic droit sur `Application.java` → 'Run as' → 'Java Application'
 
 2. **Test 1 - Créer un TodoItem (POST)** :
    - URL : `POST http://localhost:8080/todos`
@@ -121,28 +135,40 @@ public void createTodoItem(@RequestBody TodoItem todoItem) {
 ```
    - Résultat attendu : Code HTTP `201 Created`
 
-3. **Test 2 - Récupérer tous les TodoItems (GET)** :
-   - URL : `GET http://localhost:8080/todos`
-   - Résultat attendu : Liste JSON des items persistés
-
-4. **Vérification en base de données** : Utiliser DBeaver pour se connecter à PostgreSQL et vérifier que les données sont bien enregistrées dans la table `todo_item`.
-
-
-[NOTE]
-====
-* Les URL des endpoints sont renseignées dans le contrôleur via les annotation `@...Mapping` 
-* Exemple de body JSON : 
-
+3. **Test 2 - Créer un second TodoItem en retard (pour tester RG1)** :
+   - URL : `POST http://localhost:8080/todos`
+   - Body :
 ```json
 {
-    "id": "0f8-06eb17ba8d34",
-    "time": "2020-02-27T10:31:43Z",
-    "content": "Faire les courses"
-  }
+    "id": "item-late-001",
+    "time": "2020-02-25T10:31:43Z",
+    "content": "Payer facture"
+}
 ```
-====
+   - Résultat attendu : Code HTTP `201 Created`
 
-NOTE: Pour lancer l'application Spring, sélectionner la classe `TodolistApplication` et faire bouton droit -> 'Run as' -> 'Java Application'.
+4. **Test 3 - Récupérer tous les TodoItems (GET)** :
+   - URL : `GET http://localhost:8080/todos`
+   - Résultat attendu : Liste JSON des items persistés, avec le préfixe `[LATE!]` appliqué au deuxième item
+
+5. **Vérification en base de données** : Utiliser DBeaver pour se connecter à PostgreSQL et vérifier que les données sont bien enregistrées dans la table `todo_item`.
+
+**Résumé des tests effectués :**
+
+**POST /todos** - Création d'un TodoItem
+- Code HTTP attendu : `201 Created`
+- Les données sont persistées en base de données PostgreSQL
+
+**GET /todos** - Récupération de tous les TodoItems
+- Code HTTP attendu : `200 OK`
+- La réponse contient une liste JSON avec tous les items persistés
+- La règle de gestion RG1 est appliquée : `[LATE!]` est préfixé aux items datés de plus de 24h
+
+**Injection de dépendance**
+- Le `TodoItemRepository` est correctement injecté via le constructeur
+- Pas de `NullPointerException` lors de l'appel aux endpoints
+
+NOTE: Pour lancer l'application Spring, sélectionner la classe `Application` et faire bouton droit -> 'Run as' -> 'Java Application'.
 
 * Quand le nouveau endpoint fonctionne, commiter, faire un push vers Github.
 
