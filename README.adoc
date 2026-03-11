@@ -306,11 +306,11 @@ HTTP 201 Created
 ```
 
 **Avantages de cette architecture :**
-- ✅ Isolement du domaine métier des détails techniques
-- ✅ Meilleure testabilité (chaque couche testée indépendamment)
-- ✅ Réutilisabilité (les ports peuvent être utilisés par plusieurs adaptateurs)
-- ✅ Maintenabilité (responsabilités clairement séparées)
-- ✅ Flexibilité (remplacement facile d'un adaptateur)
+- Isolement du domaine métier des détails techniques
+- Meilleure testabilité (chaque couche testée indépendamment)
+- Réutilisabilité (les ports peuvent être utilisés par plusieurs adaptateurs)
+- Maintenabilité (responsabilités clairement séparées)
+- Flexibilité (remplacement facile d'un adaptateur)
 
 ### Exercice 3 - Ecriture de tests
 _Temps estimé : 20 mins_
@@ -321,12 +321,118 @@ _Temps estimé : 20 mins_
 
 *Quels famille de tests devra-t-on écrire pour les adaptateurs ?* 
 
+Pour les adaptateurs, il faut écrire plusieurs familles de tests :
+
+**1. Tests du domaine (TodoItem) - Couche métier**
+- Tests unitaires de la RG1 : vérifier que `finalContent()` ajoute `[LATE!]` si > 24h
+- Tests des cas limites : item = 24h exactement, item = 24h + 1 min
+- Tests des cas extrêmes : contenu vide, caractères spéciaux, contenu très long
+- Tests d'égalité : vérifier l'implémentation de `equals()` et `hashCode()`
+- Pas de dépendances externes, tests unitaires purs
+
+**2. Tests des services applicatifs (AddTodoItemService, GetTodoItemsService) - Couche application**
+- Tests d'orchestration : vérifier que le service appelle le bon port
+- Tests avec Mockito : mocker les ports de sortie et vérifier les appels
+- Tests du passage des données : vérifier que les bonnes données sont transmises
+- Tests des cas d'erreur : vérifier le comportement en cas de dépendance défaillante
+- Utilisation de `@ExtendWith(MockitoExtension.class)`
+
+**3. Tests de l'adaptateur REST (TodoListController) - Couche présentation**
+- Tests des endpoints avec `@WebMvcTest(controllers = TodoListController.class)`
+- Tests des codes HTTP : vérifier 201 Created pour POST, 200 OK pour GET
+- Tests de désérialisation JSON (POST) : vérifier que le JSON est bien converti en objet
+- Tests de sérialisation JSON (GET) : vérifier que les objets sont bien convertis en JSON
+- Tests des requêtes mal formées : JSON invalide, body vide, types incorrects
+- Tests de l'intégration avec les ports : vérifier que les ports sont appelés
+- Tests du contenu des réponses : vérifier que les données sont correctes
+- Utilisation de MockMvc pour simuler les requêtes HTTP
+
+**4. Tests de l'adaptateur de persistance (TodoItemPersistenceAdapter) - Couche infrastructure**
+- Tests avec `@DataJpaTest` : charge le contexte JPA sans les contrôleurs
+- Tests du mapper : vérifier la conversion JPA ↔ domaine
+- Tests de la persistance : vérifier que `save()` persiste bien en base
+- Tests de la lecture : vérifier que `findAll()` récupère bien les données
+- Utilisation d'une base de données de test (H2 par défaut)
+- Tests du respect de la contrainte d'unicité de l'ID
+
+**5. Tests d'intégration (optionnel)**
+- Tests du flux complet : depuis la requête HTTP jusqu'à la base de données
+- Utilisation de `@SpringBootTest` pour charger toute l'application
+- Tests avec une vraie base de données ou une base de test (H2)
+
 *S'il vous reste du temps, écrire quelques-uns de ces tests.*
+
+**Tests implémentés (2-3 tests essentiels) :**
+
+**1. Test du Domaine - TodoItemTest :**
+```java
+@Test
+void testFinalContentWithLateItem() {
+    Instant twoHoursAgo = Instant.now().minus(48, ChronoUnit.HOURS);
+    TodoItem item = new TodoItem("item-1", twoHoursAgo, "Payer facture");
+
+    String result = item.finalContent();
+
+    assertTrue(result.startsWith("[LATE!] "));
+    assertEquals("[LATE!] Payer facture", result);
+}
+
+@Test
+void testFinalContentWithRecentItem() {
+    Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
+    TodoItem item = new TodoItem("item-2", oneHourAgo, "Faire les courses");
+
+    String result = item.finalContent();
+
+    assertFalse(result.startsWith("[LATE!]"));
+    assertEquals("Faire les courses", result);
+}
+```
+
+**2. Test du Service Applicatif - AddTodoItemServiceTest :**
+```java
+@ExtendWith(MockitoExtension.class)
+class AddTodoItemServiceTest {
+    @Mock
+    private UpdateTodoItem updateTodoItemPort;
+
+    @Test
+    void testAddTodoItemCallsPort() {
+        TodoItem item = new TodoItem("item-1", Instant.now(), "Test");
+        service.addTodoItem(item);
+
+        verify(updateTodoItemPort, times(1)).storeNewTodoItem(item);
+    }
+}
+```
+
+**3. Test de l'Adaptateur REST - TodoListControllerTest :**
+```java
+@WebMvcTest(controllers = TodoListController.class)
+class TodoListControllerTest {
+    @Test
+    void testCreateTodoItemReturns201() throws Exception {
+        String jsonBody = """
+            {
+                "id": "item-1",
+                "time": "2026-03-11T14:30:00Z",
+                "content": "Faire les courses"
+            }
+            """;
+
+        mockMvc.perform(post("/todos")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonBody))
+            .andExpect(status().isCreated());
+    }
+}
+```
 
 [TIP]
 =====
-- Pour tester l'adapter REST, utiliser l'annotation `@WebMvcTest(controllers = TodoListController.class)`
+- Pour tester l'adaptateur REST, utiliser l'annotation `@WebMvcTest(controllers = TodoListController.class)`
 - Voir cette https://spring.io/guides/gs/testing-web/[documentation]
+- Utiliser MockMvc pour simuler les requêtes HTTP sans lancer le serveur
+- Mocker les ports d'entrée avec `@MockBean`
+- Vérifier les codes HTTP et les appels aux ports
 =====
-
-
