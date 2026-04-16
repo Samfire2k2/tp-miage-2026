@@ -4,10 +4,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 /**
- * Un item à faire, immuable
- * 
- * @author bflorat
- *
+ * Entité du domaine TodoItem - Exercice 2 : Architecture hexagonale
+ * Contient la logique métier pour la RG1 (marquage [LATE!])
+ * Immuable et indépendante de toute technologie (pas d'annotation JPA)
  */
 public class TodoItem {
 
@@ -54,9 +53,9 @@ public class TodoItem {
 	}
 
 	/**
-	 * RG 1 : si l'item a plus de 24h, ajouter dans le contenu une note "[LATE!]"
+	 * RG 1 : si l'item a plus de 24h, ajouter "[LATE!]" au contenu
 	 * 
-	 * @return liste des items
+	 * @return le contenu avec le préfixe [LATE!] si en retard, sinon le contenu original
 	 */
 	public String finalContent() {
 		return isLate() ? LATE + this.content : this.content;

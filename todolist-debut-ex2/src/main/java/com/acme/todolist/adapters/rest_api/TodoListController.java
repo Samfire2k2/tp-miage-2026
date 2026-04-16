@@ -16,17 +16,28 @@ import com.acme.todolist.application.port.in.GetTodoItems;
 import com.acme.todolist.domain.TodoItem;
 
 /**
- * Le controlleur Spring MVC qui expose les endpoints REST
- * 
- * @author bflorat
- *
+ * Adaptateur REST du contrôleur - Architecture hexagonale
+ * Expose les endpoints HTTP et délègue au ports d'entrée
  */
 @RestController
 public class TodoListController {
 	
+	/**
+	 * Port d'entrée pour récupérer les TodoItems
+	 */
 	private GetTodoItems getTodoItemsQuery;
+	
+	/**
+	 * Port d'entrée pour ajouter un TodoItem
+	 */
 	private AddTodoItem addTodoItemCommand;
 
+	/**
+	 * Injection des ports d'entrée via le constructeur
+	 * 
+	 * @param getTodoItemsQuery port pour récupérer les items
+	 * @param addTodoItemCommand port pour ajouter un item
+	 */
 	@Inject
 	public TodoListController(GetTodoItems getTodoItemsQuery, AddTodoItem addTodoItemCommand) {
 		this.getTodoItemsQuery = getTodoItemsQuery;

@@ -5,13 +5,16 @@ import java.util.List;
 import com.acme.todolist.domain.TodoItem;
 
 /**
- * Charge des todoitems depuis une source de persistence
- * @author bflorat
- *
+ * Port de sortie pour charger les TodoItems depuis une source de persistance
+ * Contrat entre le domaine et les adaptateurs de persistance
  */
 public interface LoadTodoItem {
 	
-	/* Récupére tous les TodoItem */
+	/**
+	 * Récupère tous les TodoItems stockés en base de données
+	 * 
+	 * @return la liste de tous les items en base
+	 */
 	List<TodoItem> loadAllTodoItems();
 
 }

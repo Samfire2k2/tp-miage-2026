@@ -8,6 +8,10 @@ import com.acme.todolist.application.port.in.AddTodoItem;
 import com.acme.todolist.application.port.out.UpdateTodoItem;
 import com.acme.todolist.domain.TodoItem;
 
+/**
+ * Service applicatif pour ajouter un TodoItem
+ * Implémente le port d'entrée AddTodoItem
+ */
 @Component
 public class AddTodoItemService implements AddTodoItem {
 

@@ -11,6 +11,10 @@ import com.acme.todolist.application.port.in.GetTodoItems;
 import com.acme.todolist.application.port.out.LoadTodoItem;
 import com.acme.todolist.domain.TodoItem;
 
+/**
+ * Service applicatif pour récupérer les TodoItems
+ * Implémente le port d'entrée GetTodoItems
+ */
 @Component
 public class GetTodoItemsService implements GetTodoItems {
 

@@ -3,15 +3,15 @@ package com.acme.todolist.application.port.out;
 import com.acme.todolist.domain.TodoItem;
 
 /**
- * Créé ou met à jour des TodoItem persistés
- * @author bflorat
- *
+ * Port de sortie pour persister les TodoItems
+ * Contrat entre le domaine et les adaptateurs de persistance
  */
 public interface UpdateTodoItem {
 	
 	/**
-	 * Stocke un nouveau TodoItem
-	 * @param item
+	 * Stocke un nouveau TodoItem en base de données
+	 * 
+	 * @param item l'item à stocker
 	 */
 	void storeNewTodoItem(TodoItem item);
 

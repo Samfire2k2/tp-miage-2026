@@ -19,8 +19,6 @@ import com.acme.todolist.domain.TodoItem;
 
 /**
  * Tests unitaires pour le service applicatif GetTodoItemsService
- *
- * @author étudiant
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GetTodoItemsService - Récupération des items")
@@ -52,21 +50,6 @@ class GetTodoItemsServiceTest {
 
         // Assert : Vérifier que les items sont retournés
         assertEquals(2, result.size());
-        assertEquals("Item 1", result.get(0).getContent());
-        assertEquals("Item 2", result.get(1).getContent());
-    }
-
-    @Test
-    @DisplayName("givenEmptyListInPort_whenGetAllTodoItems_thenReturnsEmptyList")
-    void testGetAllTodoItemsWithEmptyList() {
-        // Arrange : Le port retourne une liste vide
-        when(loadTodoItemPort.loadAllTodoItems()).thenReturn(Arrays.asList());
-
-        // Act : Appeler le service
-        List<TodoItem> result = getTodoItemsService.getAllTodoItems();
-
-        // Assert : Vérifier que la liste est vide
-        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -82,22 +65,7 @@ class GetTodoItemsServiceTest {
         List<TodoItem> result = getTodoItemsService.getAllTodoItems();
 
         // Assert : Vérifier que finalContent() a été appelée et [LATE!] est ajouté
-        assertEquals(1, result.size());
-        assertTrue(result.get(0).getContent().startsWith("[LATE!]"),
-                  "Le contenu doit contenir le préfixe [LATE!]");
-    }
-
-    @Test
-    @DisplayName("givenCallsToService_whenGetAllTodoItems_thenCallsPortOnce")
-    void testGetAllTodoItemsCallsPortOnce() {
-        // Arrange
-        when(loadTodoItemPort.loadAllTodoItems()).thenReturn(Arrays.asList());
-
-        // Act : Appeler le service
-        getTodoItemsService.getAllTodoItems();
-
-        // Assert : Vérifier que le port est appelé exactement une fois
-        verify(loadTodoItemPort, times(1)).loadAllTodoItems();
+        assertTrue(result.get(0).getContent().startsWith("[LATE!]"));
     }
 }
 

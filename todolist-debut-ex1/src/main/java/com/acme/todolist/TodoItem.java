@@ -1,19 +1,20 @@
 package com.acme.todolist;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
 /**
  * Un item à faire, immuable
- * Sert à la fois d'entité JPA et de DTO (entrée/sortie des services Web)
- * 
- * @author bflorat
- *
+ * Entité JPA et DTO pour l'exercice 1
+ * Contient la logique métier RG1 (marquage [LATE!])
  */
 @Entity
 public class TodoItem {
+	
+	private static final String LATE = "[LATE!]";
 	
 	@Id 
 	private String id;
@@ -32,7 +33,7 @@ public class TodoItem {
 	}
 
 	public String getContent() {
-		return content;
+		return this.content;
 	}
 	
 	/**
@@ -45,6 +46,24 @@ public class TodoItem {
 		this.id = id;
 		this.time = time;
 		this.content = content;
+	}
+
+	/**
+	 * RG 1 : si l'item a plus de 24h, ajouter "[LATE!]" au contenu
+	 * 
+	 * @return le contenu avec le préfixe [LATE!] si en retard
+	 */
+	public String finalContent() {
+		return isLate() ? LATE + this.content : this.content;
+	}
+
+	/**
+	 * Vérifie si l'item est en retard (plus de 24h)
+	 * 
+	 * @return true si l'item a plus de 24h
+	 */
+	private boolean isLate() {
+		return Instant.now().isAfter(this.time.plus(1, ChronoUnit.DAYS));
 	}
 
 	@Override
