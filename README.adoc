@@ -346,71 +346,32 @@ Pour les adaptateurs, il faut écrire plusieurs familles de tests :
 
 *S'il vous reste du temps, écrire quelques-uns de ces tests.*
 
-**Tests implémentés (2-3 tests essentiels) :**
+**Tests implémentés (11 tests essentiels) :**
 
-**1. Test du Domaine - TodoItemTest :**
-```java
-@Test
-void testFinalContentWithLateItem() {
-    Instant twoHoursAgo = Instant.now().minus(48, ChronoUnit.HOURS);
-    TodoItem item = new TodoItem("item-1", twoHoursAgo, "Payer facture");
+**1. Test du Domaine - TodoItemTest (3 tests) :**
+- `testFinalContentWithLateItem()` : Vérifier que [LATE!] est ajouté pour un item > 24h
+- `testFinalContentWithRecentItem()` : Vérifier que [LATE!] n'est pas ajouté pour un item < 24h
+- `testFinalContentWithJustAfter24HoursItem()` : Vérifier le cas limite (24h + 1 min)
 
-    String result = item.finalContent();
+**2. Test du Service Applicatif - AddTodoItemServiceTest (2 tests) :**
+- `testAddTodoItemCallsPort()` : Vérifier que le service appelle le port de persistance
+- `testAddMultipleTodoItems()` : Vérifier que le port est appelé plusieurs fois correctement
 
-    assertTrue(result.startsWith("[LATE!] "));
-    assertEquals("[LATE!] Payer facture", result);
-}
+**3. Test du Service Applicatif - GetTodoItemsServiceTest (2 tests) :**
+- `testGetAllTodoItemsReturnsItems()` : Vérifier que le service récupère les items
+- `testGetAllTodoItemsAppliesRG1()` : Vérifier que la RG1 ([LATE!]) est appliquée
 
-@Test
-void testFinalContentWithRecentItem() {
-    Instant oneHourAgo = Instant.now().minus(1, ChronoUnit.HOURS);
-    TodoItem item = new TodoItem("item-2", oneHourAgo, "Faire les courses");
+**4. Test de l'Adaptateur REST - TodoListControllerTest (4 tests) :**
+- `testCreateTodoItemReturns201()` : Vérifier le code HTTP 201 pour POST /todos
+- `testGetTodoItemsReturns200()` : Vérifier le code HTTP 200 pour GET /todos
+- `testCreateTodoItemWithMalformedJson()` : Vérifier le rejet des JSON mal formés (400)
+- `testCreateTodoItemPortReceivesCorrectData()` : Vérifier que les données correctes sont passées au port
 
-    String result = item.finalContent();
-
-    assertFalse(result.startsWith("[LATE!]"));
-    assertEquals("Faire les courses", result);
-}
-```
-
-**2. Test du Service Applicatif - AddTodoItemServiceTest :**
-```java
-@ExtendWith(MockitoExtension.class)
-class AddTodoItemServiceTest {
-    @Mock
-    private UpdateTodoItem updateTodoItemPort;
-
-    @Test
-    void testAddTodoItemCallsPort() {
-        TodoItem item = new TodoItem("item-1", Instant.now(), "Test");
-        service.addTodoItem(item);
-
-        verify(updateTodoItemPort, times(1)).storeNewTodoItem(item);
-    }
-}
-```
-
-**3. Test de l'Adaptateur REST - TodoListControllerTest :**
-```java
-@WebMvcTest(controllers = TodoListController.class)
-class TodoListControllerTest {
-    @Test
-    void testCreateTodoItemReturns201() throws Exception {
-        String jsonBody = """
-            {
-                "id": "item-1",
-                "time": "2026-03-11T14:30:00Z",
-                "content": "Faire les courses"
-            }
-            """;
-
-        mockMvc.perform(post("/todos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(jsonBody))
-            .andExpect(status().isCreated());
-    }
-}
-```
+**Résumé :**
+- ✅ 11 tests au total (réduit de 22 pour qualité > quantité)
+- ✅ Couverture complète : domaine (RG1), services, adaptateurs REST
+- ✅ Tous les tests passent
+- ✅ Architecture test = architecture code (séparation des couches)
 
 [TIP]
 =====
